@@ -3,11 +3,15 @@
 close all;
 clear all;
 
-dir='20170508-New-S2h36m-6mmpmin';   
-name ='Filtered_top-270-800';
+% dir='20170508-New-S2h36m-6mmpmin';   
+% name ='Filtered_top-270-800';
+% 
+% path=['/data.lfpn/eckstein/Torsten/' dir '/'];
+% filename = [path name '.tif']
 
-path=['/data.lfpn/eckstein/Torsten/' dir '/'];
-filename = [path name '.tif']
+filename ='Filtered_bot-200-700.tif';
+path='ble';
+name='bla';
 
 info = imfinfo(filename);
 A=imread(filename, 'Info', info);
@@ -36,6 +40,10 @@ dx=2/aa;
 x=0:dx:dx*(Nx-1);
 Lx=max(x);
 
+clearvars tout
+clearvars xout
+clearvars xout2
+
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%      Peaks over time detection---> The are saved in out.                     %%
@@ -52,108 +60,20 @@ choice = questdlg(['Data for ' name 'already seems to exist'], ...
     'Calculate anyway','Load data','Load data');
 % Handle response
 switch choice
-    case 'Calculate anyway'
+case 'Calculate anyway'
 
-Nx=length(S(1,:));
-T=length(S(:,1));
-g0=zeros(T,Nx);
-S2=(S-g0)<0;
-out=NaN(size(S));
-k=1;
-clearvars tout
-clearvars xout
-clearvars xout2
-for i=1:Nx
-    j1=1;
-    j2=1;
-    while j1<T && j2<T
-        while j1< T && S2(j1,i)==0 
-            j1=j1+1;
-        end
-        %%% j1 marks the first one
-        j2=j1;
-        while j2< T && S2(j2,i)==1
-            j2=j2+1;
-        end
-        %%% j2 mark the first zero
-        if j2~= j1
-            [aux1,aux2]=min(S(j1:j2,i));
-          out(j1+aux2-1,i)=aux1;
-          if j1+aux2<=T && aux2>1
-            xout2(k)=x(i);
-          %xout(k)=x(j1+aux2-1);
-          
-          %%%%%%%%
-            laux=t((j1+aux2-2):(j1+aux2));
-            laux2=S((j1+aux2-2):(j1+aux2),i);
-            %laux2=laux2';
-            lauxp=polyfit(laux,laux2,2);
-            %%%% p(1)x*x + p(2)*x +p(3)
-            tout(k)=-lauxp(2)/(2*lauxp(1));
-            %out2(i)=x(j);
-          %%%%%
-          k=k+1;
-          end
-        end
-        j1=j2;
-    end
-end
+[xout2,tout]=DetectPeaksAlongX(x,t,S,0.0);
 save(data_out,'-v7.3');
 
-    case 'Load data'
-          calculate=0; 
-           fprintf('DO NOT Calculate = %d \n',calculate)
-          load(data_out);       
-   end
+case 'Load data'
+      calculate=0; 
+      fprintf('DO NOT Calculate = %d \n',calculate)
+     load(data_out);       
+end
 else
 
-Nx=length(S(1,:));
-T=length(S(:,1));
-g0=zeros(T,Nx);
-S2=(S-g0)<0;
-out=NaN(size(S));
-k=1;
-clearvars tout
-clearvars xout
-clearvars xout2
-for i=1:Nx
-    j1=1;
-    j2=1;
-    while j1<T && j2<T
-        while j1< T && S2(j1,i)==0 
-            j1=j1+1;
-        end
-        %%% j1 marks the first one
-        j2=j1;
-        while j2< T && S2(j2,i)==1
-            j2=j2+1;
-        end
-        %%% j2 mark the first zero
-        if j2~= j1
-            [aux1,aux2]=min(S(j1:j2,i));
-          out(j1+aux2-1,i)=aux1;
-          if j1+aux2<=T && aux2>1
-            xout2(k)=x(i);
-          %xout(k)=x(j1+aux2-1);
-          
-          %%%%%%%%
-            laux=t((j1+aux2-2):(j1+aux2));
-            laux2=S((j1+aux2-2):(j1+aux2),i);
-            %laux2=laux2';
-            lauxp=polyfit(laux,laux2,2);
-            %%%% p(1)x*x + p(2)*x +p(3)
-            tout(k)=-lauxp(2)/(2*lauxp(1));
-            %out2(i)=x(j);
-          %%%%%
-          k=k+1;
-          end
-        end
-        j1=j2;
-    end
-end
-
-
-save(data_out,'-v7.3');
+    [xout2,tout]=DetectPeaksAlongX(x,t,S,0.0);
+    save(data_out,'-v7.3');
 end
 
 'part 1 done'
@@ -174,25 +94,19 @@ clearvars xout1
 
 input('Zoom the picture in the area you want, then press enter \n');
 
-display('Click on the map the position from which you want to start measuring \n');
+display('Click on the map the position from which you want to start measuring');
 
 [auxX, auxY]=ginput(1);
 distance=(auxX*ones(size(xout2))-xout2).^2+(auxY*ones(size(tout))-tout).^2;
 [ignore, index]=min(distance);
 tstart=tout(index);
-aux=xout2(index);
+xstart=xout2(index);
 
 
-forward=1;
-k=1;
-tout1(k)=tstart;
-
-if max(size(aux))==0
-        xout1(k)=min(xout2(tout<=(tstart+0.002) & (tstart-0.002)<=tout));
-else
-    xstart=aux;
-    xout1(k)=aux;
-end
+    forward=1;
+    k=1;
+    tout1(k)=tstart;
+    xout1(k)=xstart;
 
 
 Wiggle=0.003;
